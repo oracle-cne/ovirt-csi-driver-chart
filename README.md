@@ -1,44 +1,56 @@
-*This repository acts as a template for all of Oracle’s GitHub repositories. It contains information about the guidelines for those repositories. All files and sections contained in this template are mandatory, and a GitHub app ensures alignment with these guidelines. To get started with a new repository, replace the italic paragraphs with the respective text for your project.*
+# oVirt CSI Driver Helm Chart
 
-# Project name
-
-*Describe your project's features, functionality and target audience*
+This repository contains the Helm chart for deploying the oVirt CSI Driver.
 
 ## Installation
 
-*Provide detailed step-by-step installation instructions. You can name this section **How to Run** or **Getting Started** instead of **Installation** if that's more acceptable for your project*
+The chart can be installed via the [Oracle Cloud Native Environment Application Catalog](https://github.com/oracle-cne/catalog), the [Oracle CNE CLI](https://github.com/oracle-cne/ocne), or via [Helm](https://helm.sh/docs/helm/helm_install/).
 
-## Documentation
 
-*Developer-oriented documentation can be published on GitHub, but all product documentation must be published on <https://docs.oracle.com>*
+Install with default values:
 
-## Examples
+```bash
+ocne application install \
+  --name ovirt-csi-driver \
+  --release ovirt-csi-drvier \
+  --namespace kube-system
+```
 
-*Describe any included examples or provide a link to a demo/tutorial*
+Install with a custom values file:
 
-## Help
+```bash
+ocne application install \
+  --name ovirt-csi-driver \
+  --release ovirt-csi-driver \
+  --namespace kube-system \
+  -f values.override.yaml
+```
 
-*Inform users on where to get help or how to receive official support from Oracle (if applicable)*
+Via Helm:
+
+```bash
+helm install ovirt-csi-driver ./chart \
+  --namespace kube-system \
+  --create-namespace
+```
+
+## Validation
+
+Basic post-install checks:
+
+```bash
+kubectl -n kube-system get deployment,daemonset,serviceaccount
+kubectl get csidriver csi.ovirt.org
+```
 
 ## Contributing
 
-*If your project has specific contribution requirements, update the CONTRIBUTING.md file to ensure those requirements are clearly explained*
-
-This project welcomes contributions from the community. Before submitting a pull request, please [review our contribution guide](./CONTRIBUTING.md)
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 ## Security
 
-Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
+See [`SECURITY.md`](./SECURITY.md)
 
 ## License
 
-*The correct copyright notice format for both documentation and software is*
-    "Copyright (c) [year,] year Oracle and/or its affiliates."
-*You must include the year the content was first released (on any platform) and the most recent year in which it was revised*
-
-Copyright (c) 2026 Oracle and/or its affiliates.
-
-*Replace this statement if your project is not licensed under the UPL*
-
-Released under the Universal Permissive License v1.0 as shown at
-<https://oss.oracle.com/licenses/upl/>.
+Released under the Universal Permissive License v1.0. See [`LICENSE.txt`](./LICENSE.txt).
