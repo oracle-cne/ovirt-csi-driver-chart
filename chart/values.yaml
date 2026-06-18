@@ -94,7 +94,7 @@ csiNode:
   livenessProbe:
     image:
       repository: olcne/livenessprobe
-      tag: v2.17.0
+      tag: v2.19.0
     resources:
       limits:
         cpu: 160m
