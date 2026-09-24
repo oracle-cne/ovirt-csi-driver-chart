@@ -1,0 +1,52 @@
+{{- $pvc := index .Values.pvc "1GOvirtCowDisk" }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "mychart.fullname" . | trunc 58 | trimSuffix "-" }}-test
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 300
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: storage
+      image: container-registry.oracle.com/os/oraclelinux:8
+      command: ["/bin/bash", "-ec"]
+      args:
+        - |
+          printf "%s\n" "ovirt-csi-driver storage test" > /data/test
+          test "$(cat /data/test)" = "ovirt-csi-driver storage test"
+          echo "Volume provisioning, mounting, and read/write succeeded."
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      volumeMounts:
+        - name: storage
+          mountPath: /data
+  volumes:
+    - name: storage
+      ephemeral:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: {{ $pvc.storageClass | quote }}
+            resources:
+              requests:
+                storage: {{ $pvc.storageRequest | quote }}
