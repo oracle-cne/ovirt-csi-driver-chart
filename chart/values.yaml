@@ -139,7 +139,7 @@ csiNode:
         memory: 50Mi
 probes:
   readinessProbe:
-    enabled: true
+    enabled: false
     httpGet:
       path: /healthz
       port: healthz
@@ -148,9 +148,10 @@ probes:
   livenessProbe:
     enabled: true
     failureThreshold: 5
-    httpGet:
-      path: /healthz
-      port: healthz
+    # The template selects /livez:9808 when readiness is enabled, otherwise
+    # /healthz on the healthz port, unless httpGet.path or httpGet.port is
+    # explicitly set here or in a component override.
+    httpGet: {}
     initialDelaySeconds: 10
     periodSeconds: 2
     timeoutSeconds: 3
