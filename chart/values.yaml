@@ -153,3 +153,10 @@ driver:
 
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
+
+# Run with helm test; uses the PVC storage class and size configured above.
+tests:
+  image:
+    repository: container-registry.oracle.com/os/oraclelinux
+    tag: 8-slim
+    pullPolicy: IfNotPresent

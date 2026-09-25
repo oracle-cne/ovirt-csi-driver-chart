@@ -43,6 +43,12 @@ spec:
         image: {{ .Values.csiNode.ovirtNode.image.repository }}:{{ .Values.csiNode.ovirtNode.image.tag
           | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.csiNode.ovirtNode.imagePullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
+          periodSeconds: 2
+          timeoutSeconds: 3
         livenessProbe:
           failureThreshold: 5
           httpGet:
