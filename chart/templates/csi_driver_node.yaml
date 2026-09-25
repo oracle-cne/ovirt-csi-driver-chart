@@ -43,20 +43,14 @@ spec:
         image: {{ .Values.csiNode.ovirtNode.image.repository }}:{{ .Values.csiNode.ovirtNode.image.tag
           | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.csiNode.ovirtNode.imagePullPolicy }}
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: healthz
-          periodSeconds: 2
-          timeoutSeconds: 3
-        livenessProbe:
-          failureThreshold: 5
-          httpGet:
-            path: /healthz
-            port: healthz
-          initialDelaySeconds: 10
-          periodSeconds: 2
-          timeoutSeconds: 3
+        {{- $readinessProbe := mergeOverwrite (deepCopy .Values.probes.readinessProbe) .Values.csiNode.ovirtNode.readinessProbe }}
+        {{- if $readinessProbe.enabled }}
+        readinessProbe: {{- omit $readinessProbe "enabled" | toYaml | nindent 10 }}
+        {{- end }}
+        {{- $livenessProbe := mergeOverwrite (deepCopy .Values.probes.livenessProbe) .Values.csiNode.ovirtNode.livenessProbe }}
+        {{- if $livenessProbe.enabled }}
+        livenessProbe: {{- omit $livenessProbe "enabled" | toYaml | nindent 10 }}
+        {{- end }}
         name: ovirt
         ports:
         - containerPort: 9898

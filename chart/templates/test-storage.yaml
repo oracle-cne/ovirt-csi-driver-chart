@@ -1,3 +1,5 @@
+{{- $testValues := default (dict) .Values.tests }}
+{{- $testImage := default (dict) $testValues.image }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -18,8 +20,8 @@ spec:
   {{- end }}
   containers:
   - name: storage-test
-    image: {{ .Values.tests.image.repository }}:{{ .Values.tests.image.tag }}
-    imagePullPolicy: {{ .Values.tests.image.pullPolicy }}
+    image: {{ default "container-registry.oracle.com/os/oraclelinux" $testImage.repository }}:{{ default "8-slim" $testImage.tag }}
+    imagePullPolicy: {{ default "IfNotPresent" $testImage.pullPolicy }}
     command:
     - /bin/sh
     - -ec

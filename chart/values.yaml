@@ -60,6 +60,9 @@ csiController:
       repository: olcne/ovirt-csi-driver
       tag: v4.21.1
     imagePullPolicy: Always
+    # Overrides for the global probes configuration.
+    readinessProbe: {}
+    livenessProbe: {}
     resources:
       limits:
         cpu: 160m
@@ -113,6 +116,9 @@ csiNode:
       repository: olcne/ovirt-csi-driver
       tag: v4.21.1
     imagePullPolicy: Always
+    # Overrides for the global probes configuration.
+    readinessProbe: {}
+    livenessProbe: {}
     resources:
       limits:
         cpu: 160m
@@ -131,6 +137,23 @@ csiNode:
       requests:
         cpu: 10m
         memory: 50Mi
+probes:
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /healthz
+      port: healthz
+    periodSeconds: 2
+    timeoutSeconds: 3
+  livenessProbe:
+    enabled: true
+    failureThreshold: 5
+    httpGet:
+      path: /healthz
+      port: healthz
+    initialDelaySeconds: 10
+    periodSeconds: 2
+    timeoutSeconds: 3
 kubernetesClusterDomain: cluster.local
 ovirt:
   caProvided: true
