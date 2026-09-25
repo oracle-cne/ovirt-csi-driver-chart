@@ -35,6 +35,18 @@ helm install ovirt-csi-driver ./chart \
   --wait --timeout 5m
 ```
 
+## Health Probes
+
+In most cases, a CSI driver uses an controller health check as a liveness probe.
+That is the default behavior of this chart.  If there is a need to separate the
+liveness and readiness probes, a configuration option is available.  If no
+readiness probe is configured, the liveness probe points to the typical /healthz
+endpoint.  If a readiness proble *is* configured, the readiness probe checks
+checks /healthz while the liveness probe checks /livez.  In this configuration,
+the liveness probe will check only for process liveness but not service and the
+readiness probe will check that the storage backend is available.  These values
+can be configured via the `probes` section of the values.
+
 ## Validation
 
 The driver controller and node pods use the CSI health endpoint for readiness.
