@@ -91,6 +91,36 @@ cleanup follows the StorageClass reclaim policy (`Retain` requires manual
 cleanup). The test is run explicitly by `helm test`, not automatically by install
 or upgrade.
 
+## Optional install and upgrade preflight
+
+Set `preflight.enabled=true` to run a Helm `pre-install` and `pre-upgrade` hook.
+The hook pulls and starts every configured CSI image, prepares the controller and
+node oVirt configuration, and confirms each driver can connect to oVirt before
+the chart workload resources are applied. Helm fails the install or upgrade when
+the preflight Job fails. Use `--wait` and a timeout longer than the configured
+preflight deadline:
+
+```bash
+helm upgrade --install ovirt-csi-driver ./chart \
+  --namespace kube-system \
+  --set preflight.enabled=true \
+  --wait --timeout 10m
+```
+
+`preflight.activeDeadlineSeconds` defaults to `300`; the oVirt connection check
+for each driver defaults to `60` seconds and is configurable with
+`preflight.ovirtConnectionTimeoutSeconds`.
+
+The hook receives oVirt credentials only through Secret environment references.
+Credential-consuming commands redirect both output streams to `/dev/null`; hook
+logs contain only fixed progress and pass/fail messages. The temporary generated
+oVirt configuration is stored only in memory and hook resources are deleted on a
+successful run. On failure, the Job is retained for its non-sensitive status
+logs; Helm deletes it before a later hook run. The Job runs as a dedicated,
+temporary ServiceAccount. Its hook ClusterRoleBinding grants only `nodes/list`,
+which the driver uses during startup; it does not grant Secret read access or
+privileged execution.
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md)

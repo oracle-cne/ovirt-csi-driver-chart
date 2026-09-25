@@ -178,6 +178,14 @@ driver:
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 
+# Optional install/upgrade preflight. It pulls and starts every driver image,
+# prepares the oVirt configuration, and confirms that the driver can connect to
+# oVirt before Helm applies the normal workload resources.
+preflight:
+  enabled: false
+  activeDeadlineSeconds: 300
+  ovirtConnectionTimeoutSeconds: 60
+
 # Run with helm test; uses the PVC storage class and size configured above.
 tests:
   image:
