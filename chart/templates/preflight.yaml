@@ -93,88 +93,10 @@ spec:
         image: {{ .Values.csiNode.csiDriverRegistrar.image.repository }}:{{ .Values.csiNode.csiDriverRegistrar.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: Always
         args: ["--version"]
-      - name: prepare-controller-ovirt-config
-        image: {{ .Values.csiController.prepareOvirtConfig.image.repository }}:{{ .Values.csiController.prepareOvirtConfig.image.tag | default .Chart.AppVersion }}
-        imagePullPolicy: Always
-        command: ["/bin/sh", "-ec"]
-        args:
-        - >-
-          /ovirt-csi-driver --prepare-ovirt-config
-          --prepare-ovirt-config-file={{ .Values.csiController.ovirtController.env.ovirtConfig }}
-          --prepare-ovirt-config-ca-file={{ .Values.csiController.prepareOvirtConfig.env.ovirtCafile }}
-          --prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }} >/dev/null 2>&1
-        terminationMessagePolicy: File
-        env:
-        - name: OVIRT_URL
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.ovirt.secretName }}
-              key: ovirt_url
-        - name: OVIRT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.ovirt.secretName }}
-              key: ovirt_username
-        - name: OVIRT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.ovirt.secretName }}
-              key: ovirt_password
-        {{- if .Values.ovirt.caProvided }}
-        - name: OVIRT_CAFILE
-          value: {{ quote .Values.csiController.prepareOvirtConfig.env.ovirtCafile }}
-        - name: OVIRT_CA_BUNDLE
-          valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.ovirt.caConfigMapName }}
-              key: ca.crt
-        {{- end }}
-        volumeMounts:
-        - name: controller-config
-          mountPath: /tmp/config
       - name: validate-controller-ovirt-config
         image: {{ .Values.csiController.ovirtController.image.repository }}:{{ .Values.csiController.ovirtController.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: Always
-        command: ["/bin/sh", "-ec"]
-        args:
-        - |
-          echo 'Starting controller oVirt connection validation.'
-          /ovirt-csi-driver --endpoint=unix:///csi-socket/csi.sock >/dev/null 2>&1 &
-          driver_pid=$!
-          for _ in $(seq 1 {{ .Values.preflight.ovirtConnectionTimeoutSeconds }}); do
-            if [ -S /csi-socket/csi.sock ]; then
-              kill -KILL "$driver_pid" 2>/dev/null || true
-              echo 'Controller oVirt connection validation succeeded.'
-              exit 0
-            fi
-            if ! kill -0 "$driver_pid" 2>/dev/null; then
-              echo 'Controller oVirt connection validation failed.' >&2
-              exit 1
-            fi
-            sleep 1
-          done
-          kill -KILL "$driver_pid" 2>/dev/null || true
-          echo 'Controller oVirt connection validation timed out.' >&2
-          exit 1
-        terminationMessagePolicy: File
-        env:
-        - name: OVIRT_CONFIG
-          value: {{ quote .Values.csiController.ovirtController.env.ovirtConfig }}
-        volumeMounts:
-        - name: controller-config
-          mountPath: /tmp/config
-        - name: controller-socket
-          mountPath: /csi-socket
-      - name: prepare-node-ovirt-config
-        image: {{ .Values.csiNode.prepareOvirtConfig.image.repository }}:{{ .Values.csiNode.prepareOvirtConfig.image.tag | default .Chart.AppVersion }}
-        imagePullPolicy: Always
-        command: ["/bin/sh", "-ec"]
-        args:
-        - >-
-          /ovirt-csi-driver --prepare-ovirt-config
-          --prepare-ovirt-config-file={{ .Values.csiNode.ovirtNode.env.ovirtConfig }}
-          --prepare-ovirt-config-ca-file={{ .Values.csiNode.prepareOvirtConfig.env.ovirtCafile }}
-          --prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }} >/dev/null 2>&1
+        args: ["--validate-ovirt-config", "--prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }}"]
         terminationMessagePolicy: File
         env:
         - name: OVIRT_URL
@@ -193,65 +115,43 @@ spec:
               name: {{ .Values.ovirt.secretName }}
               key: ovirt_password
         {{- if .Values.ovirt.caProvided }}
-        - name: OVIRT_CAFILE
-          value: {{ quote .Values.csiNode.prepareOvirtConfig.env.ovirtCafile }}
         - name: OVIRT_CA_BUNDLE
           valueFrom:
             configMapKeyRef:
               name: {{ .Values.ovirt.caConfigMapName }}
               key: ca.crt
         {{- end }}
-        volumeMounts:
-        - name: node-config
-          mountPath: /tmp/config
       - name: validate-node-ovirt-config
         image: {{ .Values.csiNode.ovirtNode.image.repository }}:{{ .Values.csiNode.ovirtNode.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: Always
-        command: ["/bin/sh", "-ec"]
-        args:
-        - |
-          echo 'Starting node oVirt connection validation.'
-          /ovirt-csi-driver --endpoint=unix:///csi-socket/csi.sock >/dev/null 2>&1 &
-          driver_pid=$!
-          for _ in $(seq 1 {{ .Values.preflight.ovirtConnectionTimeoutSeconds }}); do
-            if [ -S /csi-socket/csi.sock ]; then
-              kill -KILL "$driver_pid" 2>/dev/null || true
-              echo 'Node oVirt connection validation succeeded.'
-              exit 0
-            fi
-            if ! kill -0 "$driver_pid" 2>/dev/null; then
-              echo 'Node oVirt connection validation failed.' >&2
-              exit 1
-            fi
-            sleep 1
-          done
-          kill -KILL "$driver_pid" 2>/dev/null || true
-          echo 'Node oVirt connection validation timed out.' >&2
-          exit 1
+        args: ["--validate-ovirt-config", "--prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }}"]
         terminationMessagePolicy: File
         env:
-        - name: OVIRT_CONFIG
-          value: {{ quote .Values.csiNode.ovirtNode.env.ovirtConfig }}
-        volumeMounts:
-        - name: node-config
-          mountPath: /tmp/config
-        - name: node-socket
-          mountPath: /csi-socket
+        - name: OVIRT_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_url
+        - name: OVIRT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_username
+        - name: OVIRT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_password
+        {{- if .Values.ovirt.caProvided }}
+        - name: OVIRT_CA_BUNDLE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.ovirt.caConfigMapName }}
+              key: ca.crt
+        {{- end }}
       containers:
       - name: complete
         image: {{ .Values.csiController.ovirtController.image.repository }}:{{ .Values.csiController.ovirtController.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: Always
-        command: ["/bin/sh", "-ec"]
-        args: ["echo 'All configured CSI images started and oVirt configuration validation succeeded.'"]
-      volumes:
-      - name: controller-config
-        emptyDir:
-          medium: Memory
-      - name: controller-socket
-        emptyDir: {}
-      - name: node-config
-        emptyDir:
-          medium: Memory
-      - name: node-socket
-        emptyDir: {}
+        args: ["--help"]
 {{- end }}

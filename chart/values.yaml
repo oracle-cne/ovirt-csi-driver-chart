@@ -184,7 +184,6 @@ imagePullSecrets: []
 preflight:
   enabled: false
   activeDeadlineSeconds: 300
-  ovirtConnectionTimeoutSeconds: 60
 
 # Run with helm test; uses the PVC storage class and size configured above.
 tests:

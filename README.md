@@ -106,11 +106,12 @@ or upgrade.
 ## Optional install and upgrade preflight
 
 Set `preflight.enabled=true` to run a Helm `pre-install` and `pre-upgrade` hook.
-The hook pulls and starts every configured CSI image, prepares the controller and
-node oVirt configuration, and confirms each driver can connect to oVirt before
-the chart workload resources are applied. Helm fails the install or upgrade when
-the preflight Job fails. Use `--wait` and a timeout longer than the configured
-preflight deadline:
+The hook pulls and starts every configured CSI image, then confirms each driver
+can connect to oVirt before the chart workload resources are applied. Validation
+reads the same `OVIRT_*` Secret and CA ConfigMap inputs used by
+`--prepare-ovirt-config`, but does not run preparation or write configuration
+files. Helm fails the install or upgrade when the preflight Job fails. Use
+`--wait` and a timeout longer than the configured preflight deadline:
 
 ```bash
 helm upgrade --install ovirt-csi-driver ./chart \
@@ -119,15 +120,15 @@ helm upgrade --install ovirt-csi-driver ./chart \
   --wait --timeout 10m
 ```
 
-`preflight.activeDeadlineSeconds` defaults to `300`; the oVirt connection check
-for each driver defaults to `60` seconds and is configurable with
-`preflight.ovirtConnectionTimeoutSeconds`.
+`preflight.activeDeadlineSeconds` defaults to `300`. Connection validation is
+performed by the CSI driver using its `--validate-ovirt-config` mode; the driver
+image does not need to contain a shell.
 
 The hook receives oVirt credentials only through Secret environment references.
-Credential-consuming commands redirect both output streams to `/dev/null`; hook
-logs contain only fixed progress and pass/fail messages. The temporary generated
-oVirt configuration is stored only in memory and hook resources are deleted on a
-successful run. On failure, the Job is retained for its non-sensitive status
+The validator logs only fixed progress and pass/fail messages. Credentials are
+passed through Secret environment references and are neither rendered into a
+command nor written to a log. The generated configuration is stored only in
+memory. Hook resources are deleted on a successful run. On failure, the Job is retained for its non-sensitive status
 logs; Helm deletes it before a later hook run. The Job runs as a dedicated,
 temporary ServiceAccount. Its hook ClusterRoleBinding grants only `nodes/list`,
 which the driver uses during startup; it does not grant Secret read access or
