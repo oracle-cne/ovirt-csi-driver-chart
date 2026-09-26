@@ -2,7 +2,7 @@ apiVersion: v2
 name: ovirt-csi-driver
 description: Implementation of a CSI driver for oVirt.
 type: application
-version: 4.21.1
-appVersion: "4.21.1"
+version: 4.21.2
+appVersion: "4.21.2"
 icon: icons/kubernetes-logo.svg
 kubeVersion: '>= 1.30.0 < 1.36.0'

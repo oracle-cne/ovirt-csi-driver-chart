@@ -58,7 +58,7 @@ csiController:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: Always
     # Overrides for the global probes configuration.
     readinessProbe: {}
@@ -75,7 +75,7 @@ csiController:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: IfNotPresent
     resources:
       requests:
@@ -114,7 +114,7 @@ csiNode:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: Always
     # Overrides for the global probes configuration.
     readinessProbe: {}
@@ -131,7 +131,7 @@ csiNode:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: IfNotPresent
     resources:
       requests:
