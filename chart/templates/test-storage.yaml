@@ -1,0 +1,46 @@
+{{- $testValues := default (dict) .Values.tests }}
+{{- $testImage := default (dict) $testValues.image }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ printf "%s-storage-test" (include "mychart.fullname" . | trunc 50 | trimSuffix "-") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 300
+  automountServiceAccountToken: false
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+  - name: storage-test
+    image: {{ default "container-registry.oracle.com/os/oraclelinux" $testImage.repository }}:{{ default "8-slim" $testImage.tag }}
+    imagePullPolicy: {{ default "IfNotPresent" $testImage.pullPolicy }}
+    command:
+    - /bin/sh
+    - -ec
+    - |
+      printf 'ovirt-csi-storage-test\n' > /data/health-check
+      sync
+      test "$(cat /data/health-check)" = "ovirt-csi-storage-test"
+      echo "Volume provisioning, attachment, mount, write and read succeeded."
+    volumeMounts:
+    - name: storage
+      mountPath: /data
+  volumes:
+  - name: storage
+    ephemeral:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          storageClassName: {{ (index .Values.pvc "1GOvirtCowDisk").storageClass | quote }}
+          resources:
+            requests:
+              storage: {{ (index .Values.pvc "1GOvirtCowDisk").storageRequest | quote }}

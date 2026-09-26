@@ -58,8 +58,11 @@ csiController:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: Always
+    # Overrides for the global probes configuration.
+    readinessProbe: {}
+    livenessProbe: {}
     resources:
       limits:
         cpu: 160m
@@ -72,7 +75,7 @@ csiController:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: IfNotPresent
     resources:
       requests:
@@ -111,8 +114,11 @@ csiNode:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: Always
+    # Overrides for the global probes configuration.
+    readinessProbe: {}
+    livenessProbe: {}
     resources:
       limits:
         cpu: 160m
@@ -125,12 +131,30 @@ csiNode:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.1
+      tag: v4.21.2
     imagePullPolicy: IfNotPresent
     resources:
       requests:
         cpu: 10m
         memory: 50Mi
+probes:
+  readinessProbe:
+    enabled: false
+    httpGet:
+      path: /healthz
+      port: healthz
+    periodSeconds: 2
+    timeoutSeconds: 3
+  livenessProbe:
+    enabled: true
+    failureThreshold: 5
+    # The template selects /livez:9808 when readiness is enabled, otherwise
+    # /healthz on the healthz port, unless httpGet.path or httpGet.port is
+    # explicitly set here or in a component override.
+    httpGet: {}
+    initialDelaySeconds: 10
+    periodSeconds: 2
+    timeoutSeconds: 3
 kubernetesClusterDomain: cluster.local
 ovirt:
   caProvided: true
@@ -153,3 +177,17 @@ driver:
 
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
+
+# Optional install/upgrade preflight. It pulls and starts every driver image,
+# prepares the oVirt configuration, and confirms that the driver can connect to
+# oVirt before Helm applies the normal workload resources.
+preflight:
+  enabled: false
+  activeDeadlineSeconds: 300
+
+# Run with helm test; uses the PVC storage class and size configured above.
+tests:
+  image:
+    repository: container-registry.oracle.com/os/oraclelinux
+    tag: 8-slim
+    pullPolicy: IfNotPresent

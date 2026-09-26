@@ -1,0 +1,157 @@
+{{- if .Values.preflight.enabled }}
+{{- $preflightName := printf "%s-preflight" (include "mychart.fullname" . | trunc 53 | trimSuffix "-") }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $preflightName }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $preflightName }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $preflightName }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $preflightName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ $preflightName }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $preflightName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: {{ .Values.preflight.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "mychart.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ $preflightName }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      - name: csi-attacher
+        image: {{ .Values.csiController.csiAttacher.image.repository }}:{{ .Values.csiController.csiAttacher.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--version"]
+      - name: csi-provisioner
+        image: {{ .Values.csiController.csiProvisioner.image.repository }}:{{ .Values.csiController.csiProvisioner.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--version"]
+      - name: csi-resizer
+        image: {{ .Values.csiController.csiResizer.image.repository }}:{{ .Values.csiController.csiResizer.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--version"]
+      - name: controller-liveness-probe
+        image: {{ .Values.csiController.livenessProbe.image.repository }}:{{ .Values.csiController.livenessProbe.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--help"]
+      - name: node-liveness-probe
+        image: {{ .Values.csiNode.livenessProbe.image.repository }}:{{ .Values.csiNode.livenessProbe.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--help"]
+      - name: node-driver-registrar
+        image: {{ .Values.csiNode.csiDriverRegistrar.image.repository }}:{{ .Values.csiNode.csiDriverRegistrar.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--version"]
+      - name: validate-controller-ovirt-config
+        image: {{ .Values.csiController.ovirtController.image.repository }}:{{ .Values.csiController.ovirtController.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--validate-ovirt-config", "--prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }}"]
+        terminationMessagePolicy: File
+        env:
+        - name: OVIRT_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_url
+        - name: OVIRT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_username
+        - name: OVIRT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_password
+        {{- if .Values.ovirt.caProvided }}
+        - name: OVIRT_CA_BUNDLE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.ovirt.caConfigMapName }}
+              key: ca.crt
+        {{- end }}
+      - name: validate-node-ovirt-config
+        image: {{ .Values.csiNode.ovirtNode.image.repository }}:{{ .Values.csiNode.ovirtNode.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--validate-ovirt-config", "--prepare-ovirt-config-insecure={{ .Values.ovirt.insecure }}"]
+        terminationMessagePolicy: File
+        env:
+        - name: OVIRT_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_url
+        - name: OVIRT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_username
+        - name: OVIRT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ovirt.secretName }}
+              key: ovirt_password
+        {{- if .Values.ovirt.caProvided }}
+        - name: OVIRT_CA_BUNDLE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.ovirt.caConfigMapName }}
+              key: ca.crt
+        {{- end }}
+      containers:
+      - name: complete
+        image: {{ .Values.csiController.ovirtController.image.repository }}:{{ .Values.csiController.ovirtController.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        args: ["--help"]
+{{- end }}

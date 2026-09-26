@@ -43,19 +43,41 @@ spec:
         image: {{ .Values.csiNode.ovirtNode.image.repository }}:{{ .Values.csiNode.ovirtNode.image.tag
           | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.csiNode.ovirtNode.imagePullPolicy }}
-        livenessProbe:
-          failureThreshold: 5
-          httpGet:
-            path: /healthz
-            port: healthz
-          initialDelaySeconds: 10
-          periodSeconds: 2
-          timeoutSeconds: 3
+        {{- $globalProbes := default (dict) .Values.probes }}
+        {{- $defaultReadinessProbe := dict "enabled" true "httpGet" (dict "path" "/healthz" "port" "healthz") "periodSeconds" 2 "timeoutSeconds" 3 }}
+        {{- $readinessProbe := mergeOverwrite (deepCopy $defaultReadinessProbe) (default (dict) $globalProbes.readinessProbe) (default (dict) .Values.csiNode.ovirtNode.readinessProbe) }}
+        {{- if $readinessProbe.enabled }}
+        readinessProbe: {{- omit $readinessProbe "enabled" | toYaml | nindent 10 }}
+        {{- end }}
+        {{- $defaultLivenessProbe := dict "enabled" true "failureThreshold" 5 "httpGet" (dict) "initialDelaySeconds" 10 "periodSeconds" 2 "timeoutSeconds" 3 }}
+        {{- $livenessProbe := mergeOverwrite (deepCopy $defaultLivenessProbe) (default (dict) $globalProbes.livenessProbe) (default (dict) .Values.csiNode.ovirtNode.livenessProbe) }}
+        {{- if $livenessProbe.enabled }}
+        {{- $livenessHTTPGet := deepCopy (default (dict) $livenessProbe.httpGet) }}
+        {{- $livenessPath := "/healthz" }}
+        {{- $livenessPort := "healthz" }}
+        {{- if $readinessProbe.enabled }}
+        {{- $livenessPath = "/livez" }}
+        {{- $livenessPort = 9808 }}
+        {{- end }}
+        {{- if not (hasKey $livenessHTTPGet "path") }}
+        {{- $_ := set $livenessHTTPGet "path" $livenessPath }}
+        {{- end }}
+        {{- if not (hasKey $livenessHTTPGet "port") }}
+        {{- $_ := set $livenessHTTPGet "port" $livenessPort }}
+        {{- end }}
+        {{- $_ := set $livenessProbe "httpGet" $livenessHTTPGet }}
+        livenessProbe: {{- omit $livenessProbe "enabled" | toYaml | nindent 10 }}
+        {{- end }}
         name: ovirt
         ports:
         - containerPort: 9898
           name: healthz
           protocol: TCP
+        {{- if and $readinessProbe.enabled $livenessProbe.enabled }}
+        - containerPort: 9808
+          name: livez
+          protocol: TCP
+        {{- end }}
         resources: {{- toYaml .Values.csiNode.ovirtNode.resources | nindent 10 }}
         securityContext: {{- toYaml .Values.csiNode.ovirtNode.containerSecurityContext
           | nindent 10 }}
