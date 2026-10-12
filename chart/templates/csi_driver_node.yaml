@@ -109,6 +109,9 @@ spec:
         - --v=5
         - --csi-address=/csi-socket/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.ovirt.org/csi.sock
+        {{- range $key, $value := .Values.csiNode.csiDriverRegistrar.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}

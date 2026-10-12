@@ -103,6 +103,9 @@ spec:
       - args:
         - --csi-address=/csi-socket/csi.sock
         - --v=5
+        {{- range $key, $value := .Values.csiController.csiAttacher.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
@@ -120,6 +123,9 @@ spec:
         - --csi-address=/csi-socket/csi.sock
         - --feature-gates=Topology=true
         - -v=5
+        {{- range $key, $value := .Values.csiController.csiProvisioner.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
@@ -134,8 +140,11 @@ spec:
         - mountPath: /csi-socket
           name: socket-dir
       - args:
-        - -csi-address=/csi-socket/csi.sock
+        - --csi-address=/csi-socket/csi.sock
         - -v=5
+        {{- range $key, $value := .Values.csiController.csiResizer.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}

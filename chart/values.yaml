@@ -5,6 +5,7 @@ csiController:
     image:
       repository: olcne/csi-attacher
       tag: v4.12.0
+    extraArgs: {}
     resources:
       limits:
         cpu: 160m
@@ -18,6 +19,7 @@ csiController:
     image:
       repository: olcne/csi-provisioner
       tag: v6.3.0
+    extraArgs: {}
     resources:
       limits:
         cpu: 160m
@@ -31,6 +33,7 @@ csiController:
     image:
       repository: olcne/csi-resizer
       tag: v2.2.0
+    extraArgs: {}
     resources:
       limits:
         cpu: 160m
@@ -87,6 +90,7 @@ csiNode:
     image:
       repository: olcne/csi-node-driver-registrar
       tag: v2.17.0
+    extraArgs: {}
     resources:
       limits:
         cpu: 160m
