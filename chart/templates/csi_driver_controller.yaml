@@ -9,6 +9,9 @@ metadata:
   {{- include "mychart.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.csiController.replicas }}
+  {{- with .Values.csiController.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/component: plugin

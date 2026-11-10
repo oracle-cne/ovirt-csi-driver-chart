@@ -35,6 +35,39 @@ helm install ovirt-csi-driver ./chart \
   --wait --timeout 5m
 ```
 
+## Rolling updates
+
+Configure the controller Deployment with `csiController.strategy` and the node
+DaemonSet with `csiNode.updateStrategy`. Both values default to `{}`, omitting
+the strategy fields so Kubernetes applies its defaults. See `chart/values.yaml`
+for commented examples of the override structure.
+
+For example, include these settings in `values.override.yaml`:
+
+```yaml
+csiController:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+csiNode:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+      maxSurge: 0
+```
+
+Both limits accept integer pod counts or percentage strings. At least one limit
+must be nonzero for each workload. Node surge allows old and new driver pods to
+overlap on a node; leave it at zero when overlapping driver instances are not
+supported.
+
+The controller also supports `csiController.strategy.type: Recreate`, and the node
+supports `csiNode.updateStrategy.type: OnDelete`. Omit `rollingUpdate` when
+selecting either of these types. Supplied strategy maps are rendered as configured.
+
 ## Health Probes
 
 In most cases, a CSI driver uses an controller health check as a liveness probe.
