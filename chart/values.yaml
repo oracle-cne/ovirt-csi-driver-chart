@@ -82,7 +82,25 @@ csiController:
         cpu: 160m
         memory: 128Mi
   replicas: 1
+  # Leave empty to use Kubernetes Deployment strategy defaults.
+  # Example override (limits accept pod counts or percentage strings):
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxUnavailable: 0
+  #     maxSurge: 1
+  # For type: Recreate, omit rollingUpdate.
+  strategy: {}
 csiNode:
+  # Leave empty to use Kubernetes DaemonSet update strategy defaults.
+  # Example override (limits accept pod counts or percentage strings):
+  # updateStrategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxUnavailable: 10%
+  #     maxSurge: 0
+  # At least one limit must be nonzero. For type: OnDelete, omit rollingUpdate.
+  updateStrategy: {}
   csiDriverRegistrar:
     image:
       repository: olcne/csi-node-driver-registrar
