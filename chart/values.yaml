@@ -58,7 +58,7 @@ csiController:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.3
+      tag: v4.21.4
     imagePullPolicy: Always
     # A nonempty policy replaces the entire global tokenRenewal policy.
     tokenRenewal: {}
@@ -77,7 +77,7 @@ csiController:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.3
+      tag: v4.21.4
     imagePullPolicy: IfNotPresent
     resources:
       requests:
@@ -134,7 +134,7 @@ csiNode:
       ovirtConfig: /tmp/config/ovirt-config.yaml
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.3
+      tag: v4.21.4
     imagePullPolicy: Always
     # A nonempty policy replaces the entire global tokenRenewal policy.
     tokenRenewal: {}
@@ -153,7 +153,7 @@ csiNode:
       ovirtCafile: /tmp/config/ovirt-engine-ca.pem
     image:
       repository: olcne/ovirt-csi-driver
-      tag: v4.21.3
+      tag: v4.21.4
     imagePullPolicy: IfNotPresent
     resources:
       requests:
