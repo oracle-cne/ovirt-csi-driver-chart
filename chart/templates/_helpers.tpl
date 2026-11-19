@@ -60,3 +60,28 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Render one token renewal argument. A component policy replaces the whole global
+policy so an interval override never inherits a conflicting percentage (or vice
+versa). Check presence separately from truthiness so explicit zero reaches the
+driver's validation rather than silently selecting its default.
+*/}}
+{{- define "mychart.tokenRenewalArgs" -}}
+{{- $policy := default (dict) .global -}}
+{{- if .override -}}
+{{- $policy = .override -}}
+{{- end -}}
+{{- $interval := get $policy "interval" -}}
+{{- $percentage := get $policy "percentage" -}}
+{{- $intervalSet := and (not (kindIs "invalid" $interval)) (ne (toString $interval) "") -}}
+{{- $percentageSet := and (not (kindIs "invalid" $percentage)) (ne (toString $percentage) "") -}}
+{{- if and $intervalSet $percentageSet -}}
+{{- fail (printf "%s tokenRenewal: interval and percentage are mutually exclusive" .component) -}}
+{{- end -}}
+{{- if $intervalSet }}
+- {{ printf "--token-renewal-interval=%v" $interval | quote }}
+{{- else if $percentageSet }}
+- {{ printf "--token-renewal-percentage=%v" $percentage | quote }}
+{{- end -}}
+{{- end }}

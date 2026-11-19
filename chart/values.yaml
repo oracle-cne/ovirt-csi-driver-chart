@@ -60,6 +60,8 @@ csiController:
       repository: olcne/ovirt-csi-driver
       tag: v4.21.3
     imagePullPolicy: Always
+    # A nonempty policy replaces the entire global tokenRenewal policy.
+    tokenRenewal: {}
     # Overrides for the global probes configuration.
     readinessProbe: {}
     livenessProbe: {}
@@ -134,6 +136,8 @@ csiNode:
       repository: olcne/ovirt-csi-driver
       tag: v4.21.3
     imagePullPolicy: Always
+    # A nonempty policy replaces the entire global tokenRenewal policy.
+    tokenRenewal: {}
     # Overrides for the global probes configuration.
     readinessProbe: {}
     livenessProbe: {}
@@ -155,6 +159,12 @@ csiNode:
       requests:
         cpu: 10m
         memory: 50Mi
+# Token renewal policy shared by the controller and node driver.
+# Set either interval (a positive Go duration, e.g. "5m") or percentage (1-99).
+# Leave both unset to use the driver's default of 90% of token validity.
+tokenRenewal:
+  interval: ""
+  percentage: ""
 probes:
   readinessProbe:
     enabled: false

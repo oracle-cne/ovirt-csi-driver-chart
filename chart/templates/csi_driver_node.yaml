@@ -31,6 +31,7 @@ spec:
       - args:
         - --endpoint=$(CSI_ENDPOINT)
         - --node-name=$(KUBE_NODE_NAME)
+        {{- include "mychart.tokenRenewalArgs" (dict "global" .Values.tokenRenewal "override" .Values.csiNode.ovirtNode.tokenRenewal "component" "node") | trim | nindent 8 }}
         env:
         - name: CSI_ENDPOINT
           value: unix:///csi-socket/csi.sock
