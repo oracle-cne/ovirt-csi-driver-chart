@@ -68,6 +68,41 @@ The controller also supports `csiController.strategy.type: Recreate`, and the no
 supports `csiNode.updateStrategy.type: OnDelete`. Omit `rollingUpdate` when
 selecting either of these types. Supplied strategy maps are rendered as configured.
 
+## Token renewal
+
+Configure authentication token renewal for both driver services with
+`tokenRenewal`. Select either `interval`, a positive Go duration such as `5m`, or
+`percentage`, an integer from 1 to 99 representing elapsed token validity.
+These map to `--token-renewal-interval` and `--token-renewal-percentage`.
+Leaving both unset omits the flags and uses the driver's default of 90%.
+The driver checks renewal deadlines during CSI probes.
+
+For example, use 80% globally and a fixed interval for the node driver:
+
+```yaml
+tokenRenewal:
+  percentage: 80
+csiNode:
+  ovirtNode:
+    tokenRenewal:
+      interval: 5m
+```
+
+Set `csiController.ovirtController.tokenRenewal` to override the controller in
+the same way. An empty override (`{}`) inherits the global policy. A nonempty
+override replaces the entire global policy, so selecting a different mode does
+not inherit the other mode's setting. To use the driver default for one service
+despite a global policy, set its override to `{interval: "", percentage: ""}`.
+Setting both fields in an effective policy fails chart rendering because the
+driver rejects these flags together. The driver validates duration and
+percentage values at startup.
+
+Run the token renewal rendering checks from the repository root:
+
+```bash
+bash tests/token-renewal.sh
+```
+
 ## Health Probes
 
 In most cases, a CSI driver uses an controller health check as a liveness probe.

@@ -31,6 +31,7 @@ spec:
       containers:
       - args:
         - --endpoint=$(CSI_ENDPOINT)
+        {{- include "mychart.tokenRenewalArgs" (dict "global" .Values.tokenRenewal "override" .Values.csiController.ovirtController.tokenRenewal "component" "controller") | trim | nindent 8 }}
         env:
         - name: CSI_ENDPOINT
           value: unix:///csi-socket/csi.sock
